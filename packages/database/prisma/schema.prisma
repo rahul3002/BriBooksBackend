@@ -1,0 +1,248 @@
+// Prisma Schema for BriBooks
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// User Model
+model User {
+  id            String   @id @default(uuid())
+  email         String   @unique
+  username      String   @unique
+  passwordHash  String
+  firstName     String
+  lastName      String
+  role          UserRole @default(AUTHOR)
+  avatarUrl     String?
+  bio           String?
+  emailVerified Boolean  @default(false)
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  // Relations
+  books         Book[]
+  payments      Payment[]
+  notifications Notification[]
+  moderationActions ModerationAction[]
+
+  @@index([email])
+  @@index([username])
+}
+
+enum UserRole {
+  ADMIN
+  AUTHOR
+  READER
+  MODERATOR
+}
+
+// Book Model
+model Book {
+  id            String     @id @default(uuid())
+  title         String
+  description   String
+  authorId      String
+  coverImageUrl String?
+  ageGroup      AgeGroup
+  status        BookStatus @default(DRAFT)
+  tags          String[]
+  viewCount     Int        @default(0)
+  rating        Float?
+  reviewCount   Int        @default(0)
+  createdAt     DateTime   @default(now())
+  updatedAt     DateTime   @updatedAt
+  publishedAt   DateTime?
+
+  // Relations
+  author        User       @relation(fields: [authorId], references: [id], onDelete: Cascade)
+  chapters      Chapter[]
+  reviews       Review[]
+  versions      BookVersion[]
+  moderationLogs ModerationLog[]
+
+  @@index([authorId])
+  @@index([status])
+  @@index([ageGroup])
+  @@index([publishedAt])
+}
+
+enum BookStatus {
+  DRAFT
+  PUBLISHED
+  ARCHIVED
+  UNDER_REVIEW
+}
+
+enum AgeGroup {
+  TODDLER
+  PRESCHOOL
+  EARLY_READER
+  MIDDLE_GRADE
+  YOUNG_ADULT
+}
+
+// Chapter Model
+model Chapter {
+  id              String   @id @default(uuid())
+  bookId          String
+  title           String
+  content         String   @db.Text
+  order           Int
+  illustrationUrls String[]
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  // Relations
+  book            Book     @relation(fields: [bookId], references: [id], onDelete: Cascade)
+
+  @@unique([bookId, order])
+  @@index([bookId])
+}
+
+// Book Version (for version control)
+model BookVersion {
+  id          String   @id @default(uuid())
+  bookId      String
+  version     Int
+  title       String
+  description String
+  content     Json     // Stores chapters snapshot
+  createdAt   DateTime @default(now())
+
+  // Relations
+  book        Book     @relation(fields: [bookId], references: [id], onDelete: Cascade)
+
+  @@unique([bookId, version])
+  @@index([bookId])
+}
+
+// Review Model
+model Review {
+  id        String   @id @default(uuid())
+  bookId    String
+  userId    String
+  rating    Int      // 1-5 stars
+  comment   String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Relations
+  book      Book     @relation(fields: [bookId], references: [id], onDelete: Cascade)
+
+  @@unique([bookId, userId])
+  @@index([bookId])
+}
+
+// Payment Model
+model Payment {
+  id              String        @id @default(uuid())
+  userId          String
+  amount          Float
+  currency        String        @default("USD")
+  status          PaymentStatus @default(PENDING)
+  stripePaymentId String?       @unique
+  metadata        Json?
+  createdAt       DateTime      @default(now())
+  updatedAt       DateTime      @updatedAt
+
+  // Relations
+  user            User          @relation(fields: [userId], references: [id])
+
+  @@index([userId])
+  @@index([status])
+}
+
+enum PaymentStatus {
+  PENDING
+  COMPLETED
+  FAILED
+  REFUNDED
+}
+
+// Notification Model
+model Notification {
+  id        String           @id @default(uuid())
+  userId    String
+  type      NotificationType
+  title     String
+  message   String
+  read      Boolean          @default(false)
+  metadata  Json?
+  createdAt DateTime         @default(now())
+
+  // Relations
+  user      User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([read])
+}
+
+enum NotificationType {
+  EMAIL
+  IN_APP
+  PUSH
+}
+
+// Moderation Log Model
+model ModerationLog {
+  id          String                  @id @default(uuid())
+  bookId      String
+  contentType String                  // 'book', 'chapter', 'review'
+  contentId   String
+  status      ContentModerationStatus
+  issues      Json?                   // Array of issues found
+  moderatorId String?
+  notes       String?
+  createdAt   DateTime                @default(now())
+  updatedAt   DateTime                @updatedAt
+
+  // Relations
+  book        Book                    @relation(fields: [bookId], references: [id], onDelete: Cascade)
+
+  @@index([bookId])
+  @@index([status])
+}
+
+enum ContentModerationStatus {
+  PENDING
+  APPROVED
+  REJECTED
+  FLAGGED
+}
+
+// Moderation Action Model (for admin actions)
+model ModerationAction {
+  id          String   @id @default(uuid())
+  moderatorId String
+  actionType  String   // 'approve', 'reject', 'flag', 'ban_user'
+  targetType  String   // 'book', 'user', 'review'
+  targetId    String
+  reason      String?
+  createdAt   DateTime @default(now())
+
+  // Relations
+  moderator   User     @relation(fields: [moderatorId], references: [id])
+
+  @@index([moderatorId])
+  @@index([targetType, targetId])
+}
+
+// AI Generation Log (for tracking AI usage)
+model AIGenerationLog {
+  id          String   @id @default(uuid())
+  userId      String?
+  requestType String   // 'story_generation', 'grammar_check', 'content_safety'
+  prompt      String   @db.Text
+  response    String   @db.Text
+  tokensUsed  Int?
+  createdAt   DateTime @default(now())
+
+  @@index([userId])
+  @@index([requestType])
+  @@index([createdAt])
+}

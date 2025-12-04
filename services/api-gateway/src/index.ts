@@ -44,6 +44,7 @@ const SAFETY_SERVICE_URL = `http://localhost:${process.env.SAFETY_SERVICE_PORT |
 const PUBLISHING_SERVICE_URL = `http://localhost:${process.env.PUBLISHING_SERVICE_PORT || 3005}`;
 const NOTIFICATION_SERVICE_URL = `http://localhost:${process.env.NOTIFICATION_SERVICE_PORT || 3007}`;
 const ADMIN_SERVICE_URL = `http://localhost:${process.env.ADMIN_SERVICE_PORT || 3008}`;
+const PAYMENT_SERVICE_URL = `http://localhost:${process.env.PAYMENT_SERVICE_PORT || 3006}`;
 
 // Proxy routes to microservices
 app.use(
@@ -155,6 +156,17 @@ app.use(
     })
 );
 
+app.use(
+    '/api/payments',
+    createProxyMiddleware({
+        target: PAYMENT_SERVICE_URL,
+        changeOrigin: true,
+        pathRewrite: {
+            '^/api/payments': '/api/payments',
+        },
+    })
+);
+
 // 404 handler
 app.use((_req: Request, res: Response) => {
     res.status(404).json({
@@ -175,6 +187,7 @@ app.listen(PORT, () => {
     logger.info(`   - AI Service: ${AI_SERVICE_URL}`);
     logger.info(`   - Safety Service: ${SAFETY_SERVICE_URL}`);
     logger.info(`   - Publishing Service: ${PUBLISHING_SERVICE_URL}`);
+    logger.info(`   - Payment Service: ${PAYMENT_SERVICE_URL}`);
     logger.info(`   - Notification Service: ${NOTIFICATION_SERVICE_URL}`);
     logger.info(`   - Admin Service: ${ADMIN_SERVICE_URL}`);
 });

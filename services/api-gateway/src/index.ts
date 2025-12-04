@@ -43,6 +43,7 @@ const AI_SERVICE_URL = `http://localhost:${process.env.AI_ORCHESTRATOR_SERVICE_P
 const SAFETY_SERVICE_URL = `http://localhost:${process.env.SAFETY_SERVICE_PORT || 3004}`;
 const PUBLISHING_SERVICE_URL = `http://localhost:${process.env.PUBLISHING_SERVICE_PORT || 3005}`;
 const NOTIFICATION_SERVICE_URL = `http://localhost:${process.env.NOTIFICATION_SERVICE_PORT || 3007}`;
+const ADMIN_SERVICE_URL = `http://localhost:${process.env.ADMIN_SERVICE_PORT || 3008}`;
 
 // Proxy routes to microservices
 app.use(
@@ -143,6 +144,17 @@ app.use(
     })
 );
 
+app.use(
+    '/api/admin',
+    createProxyMiddleware({
+        target: ADMIN_SERVICE_URL,
+        changeOrigin: true,
+        pathRewrite: {
+            '^/api/admin': '/api/admin',
+        },
+    })
+);
+
 // 404 handler
 app.use((_req: Request, res: Response) => {
     res.status(404).json({
@@ -164,6 +176,7 @@ app.listen(PORT, () => {
     logger.info(`   - Safety Service: ${SAFETY_SERVICE_URL}`);
     logger.info(`   - Publishing Service: ${PUBLISHING_SERVICE_URL}`);
     logger.info(`   - Notification Service: ${NOTIFICATION_SERVICE_URL}`);
+    logger.info(`   - Admin Service: ${ADMIN_SERVICE_URL}`);
 });
 
 export default app;

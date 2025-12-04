@@ -8,7 +8,7 @@
     "services/*"
   ],
   "scripts": {
-    "dev": "concurrently \"npm run dev:gateway\" \"npm run dev:user\" \"npm run dev:book\" \"npm run dev:ai\" \"npm run dev:safety\"",
+    "dev": "concurrently \"npm run dev:gateway\" \"npm run dev:user\" \"npm run dev:book\" \"npm run dev:ai\" \"npm run dev:safety\" \"npm run dev:publishing\"",
     "dev:gateway": "npm run dev --workspace=services/api-gateway",
     "dev:user": "npm run dev --workspace=services/user-service",
     "dev:book": "npm run dev --workspace=services/book-authoring-service",

@@ -41,6 +41,7 @@ const USER_SERVICE_URL = `http://localhost:${process.env.USER_SERVICE_PORT || 30
 const BOOK_SERVICE_URL = `http://localhost:${process.env.BOOK_AUTHORING_SERVICE_PORT || 3002}`;
 const AI_SERVICE_URL = `http://localhost:${process.env.AI_ORCHESTRATOR_SERVICE_PORT || 3003}`;
 const SAFETY_SERVICE_URL = `http://localhost:${process.env.SAFETY_SERVICE_PORT || 3004}`;
+const PUBLISHING_SERVICE_URL = `http://localhost:${process.env.PUBLISHING_SERVICE_PORT || 3005}`;
 
 // Proxy routes to microservices
 app.use(
@@ -119,6 +120,17 @@ app.use(
     })
 );
 
+app.use(
+    '/api/publishing',
+    createProxyMiddleware({
+        target: PUBLISHING_SERVICE_URL,
+        changeOrigin: true,
+        pathRewrite: {
+            '^/api/publishing': '/api/publishing',
+        },
+    })
+);
+
 // 404 handler
 app.use((_req: Request, res: Response) => {
     res.status(404).json({
@@ -138,6 +150,7 @@ app.listen(PORT, () => {
     logger.info(`   - Book Service: ${BOOK_SERVICE_URL}`);
     logger.info(`   - AI Service: ${AI_SERVICE_URL}`);
     logger.info(`   - Safety Service: ${SAFETY_SERVICE_URL}`);
+    logger.info(`   - Publishing Service: ${PUBLISHING_SERVICE_URL}`);
 });
 
 export default app;

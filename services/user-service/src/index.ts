@@ -34,6 +34,7 @@ app.use(errorHandler);
 // Start server
 app.listen(PORT, () => {
     logger.info(`🚀 User Service running on port ${PORT}`);
+    logger.info(`Database URL present: ${!!process.env.DATABASE_URL}`);
 });
 
 export default app;

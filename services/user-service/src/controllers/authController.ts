@@ -31,15 +31,19 @@ const changePasswordSchema = z.object({
 export class AuthController {
     // POST /auth/register
     async register(req: Request, res: Response, next: NextFunction) {
+        console.log('AuthController.register called with body:', req.body);
         try {
             const validated = registerSchema.parse({ body: req.body });
+            console.log('Validation successful');
             const result = await authService.register(validated.body);
+            console.log('Service call successful');
 
             res.status(201).json({
                 success: true,
                 data: result,
             });
         } catch (error) {
+            console.error('AuthController error:', error);
             next(error);
         }
     }
@@ -58,6 +62,7 @@ export class AuthController {
                 data: result,
             });
         } catch (error) {
+            console.error('AuthController error:', error);
             next(error);
         }
     }
@@ -76,6 +81,7 @@ export class AuthController {
                 data: result,
             });
         } catch (error) {
+            console.error('AuthController error:', error);
             next(error);
         }
     }
@@ -99,6 +105,7 @@ export class AuthController {
                 data: result,
             });
         } catch (error) {
+            console.error('AuthController error:', error);
             next(error);
         }
     }
@@ -115,6 +122,7 @@ export class AuthController {
                 data: req.user,
             });
         } catch (error) {
+            console.error('AuthController error:', error);
             next(error);
         }
     }

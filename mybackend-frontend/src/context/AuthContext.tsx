@@ -49,7 +49,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
                     const storedUser = localStorage.getItem('user');
                     const mergedUser = storedUser
-                        ? { ...userData, ...JSON.parse(storedUser) }
+                        ? { ...JSON.parse(storedUser), ...userData }
                         : userData;
 
                     if (mergedUser) {

@@ -35,20 +35,12 @@ export const BookOnboardingWizard: React.FC = () => {
 
     // Restore wizard state if returning from login
     React.useEffect(() => {
-        console.log('=== Restoration useEffect ===');
-        console.log('user:', user);
-        console.log('isAuthenticated:', isAuthenticated);
-
         const pendingReturn = sessionStorage.getItem('pendingWizardReturn');
         const savedState = sessionStorage.getItem('wizardState');
-
-        console.log('pendingReturn:', pendingReturn);
-        console.log('savedState exists:', !!savedState);
 
         if (pendingReturn === 'true' && savedState && user) {
             try {
                 const parsedState = JSON.parse(savedState);
-                console.log('Restoring wizard state:', parsedState);
                 setWizardState(parsedState);
                 // Clear the flags
                 sessionStorage.removeItem('pendingWizardReturn');
@@ -101,30 +93,14 @@ export const BookOnboardingWizard: React.FC = () => {
     };
 
     const handleCreateBook = async () => {
-        // Debug logging
-        console.log('=== Create Book Attempt ===');
-        console.log('isAuthenticated:', isAuthenticated);
-        console.log('user:', user);
-        console.log('token:', localStorage.getItem('token'));
-
         // Check if user is logged in using isAuthenticated flag
         if (!isAuthenticated || !user) {
-            console.log('Not authenticated - redirecting to login');
             // Save wizard state to restore after login
             sessionStorage.setItem('wizardState', JSON.stringify(wizardState));
             sessionStorage.setItem('pendingWizardReturn', 'true');
             navigate('/login?returnTo=/start-writing');
             return;
         }
-
-        console.log('User is authenticated - proceeding to create book');
-
-        // Log the exact data being sent
-        console.log('Book data being sent:');
-        console.log('- Title:', wizardState.bookDetails.title);
-        console.log('- Description:', wizardState.bookDetails.description);
-        console.log('- Age Group:', wizardState.bookDetails.ageGroup);
-        console.log('- Tags:', wizardState.selectedGenre ? [wizardState.selectedGenre] : []);
 
         // User is logged in, create the book
         try {
@@ -135,7 +111,6 @@ export const BookOnboardingWizard: React.FC = () => {
                 wizardState.selectedGenre ? [wizardState.selectedGenre] : []
             );
 
-            console.log('Book created successfully:', response.data);
             const bookId = response.data.id;
 
             // Store selected theme for editor

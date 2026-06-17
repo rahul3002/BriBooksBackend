@@ -102,34 +102,18 @@ export const LoginPage: React.FC = () => {
         setError('');
 
         try {
-            console.log('=== Login Attempt ===');
-            console.log('Email:', email);
-
             const response = await authService.login(email, password);
 
-            console.log('Login response:', response);
-
-            // FIX: Backend returns {success: true, data: {token, user}}
+            // Backend returns {success: true, data: {token, user}}
             const { token, user: userData } = response.data;
-
-            console.log('Token:', token);
-            console.log('User:', userData);
 
             toast.success('Welcome back!');
 
-            // Call AuthContext login with extracted data
-            console.log('Calling AuthContext login...');
             login(token, userData);
-
-            // Check what was saved
-            console.log('After login - localStorage token:', localStorage.getItem('token'));
-            console.log('After login - localStorage user:', localStorage.getItem('user'));
 
             // Check if there's a returnTo URL
             const params = new URLSearchParams(window.location.search);
             const returnTo = params.get('returnTo');
-
-            console.log('Redirect to:', returnTo || '/');
 
             if (returnTo) {
                 navigate(returnTo);

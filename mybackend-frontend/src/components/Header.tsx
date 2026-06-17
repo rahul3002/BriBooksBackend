@@ -5,7 +5,7 @@ import { Button } from "./ui/Button";
 import { useAuth } from "../context/AuthContext";
 
 export const Header: React.FC = () => {
-  const { user, isAuthenticated } = useAuth();
+  const { user, isAuthenticated, logout } = useAuth();
   const [isMenuOpen, setIsMenuOpen] = React.useState(false);
 
   return (
@@ -64,7 +64,7 @@ export const Header: React.FC = () => {
                   <User className="h-4 w-4" />
                   {user?.name}
                 </Link>
-                <Button variant="ghost" size="sm" onClick={() => { }}>
+                <Button variant="ghost" size="sm" onClick={() => logout()}>
                   Log out
                 </Button>
               </div>
@@ -99,25 +99,48 @@ export const Header: React.FC = () => {
             <Link to="/books" className="text-base font-medium text-slate-600">
               Read Books
             </Link>
-            <Link to="/start-writing" className="text-base font-medium text-slate-600">
-              Write a Book
-            </Link>
-            <Link
-              to="/pricing"
-              className="text-base font-medium text-slate-600"
-            >
-              Pricing
-            </Link>
-            <div className="flex flex-col gap-2 mt-4">
-              <Link to="/login">
-                <Button variant="ghost" className="w-full justify-start">
-                  Log in
-                </Button>
-              </Link>
-              <Link to="/signup">
-                <Button className="w-full">Get Started</Button>
-              </Link>
-            </div>
+            {isAuthenticated ? (
+              <>
+                <Link to="/start-writing" className="text-base font-medium text-slate-600">
+                  Write a Book
+                </Link>
+                <Link to="/dashboard" className="text-base font-medium text-slate-600">
+                  Dashboard
+                </Link>
+                <div className="flex flex-col gap-2 mt-4">
+                  <Link to="/dashboard" className="flex items-center gap-2 text-base font-medium text-slate-600">
+                    <User className="h-4 w-4" />
+                    {user?.name}
+                  </Link>
+                  <Button
+                    variant="ghost"
+                    className="w-full justify-start"
+                    onClick={() => logout()}
+                  >
+                    Log out
+                  </Button>
+                </div>
+              </>
+            ) : (
+              <>
+                <Link
+                  to="/pricing"
+                  className="text-base font-medium text-slate-600"
+                >
+                  Pricing
+                </Link>
+                <div className="flex flex-col gap-2 mt-4">
+                  <Link to="/login">
+                    <Button variant="ghost" className="w-full justify-start">
+                      Log in
+                    </Button>
+                  </Link>
+                  <Link to="/signup">
+                    <Button className="w-full">Get Started</Button>
+                  </Link>
+                </div>
+              </>
+            )}
           </nav>
         </div>
       )}

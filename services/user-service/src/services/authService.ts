@@ -1,6 +1,7 @@
 import bcrypt from 'bcryptjs';
 import { OAuth2Client } from 'google-auth-library';
 import * as jwt from 'jsonwebtoken';
+import jwksClient from 'jwks-rsa';
 import { prisma } from '@bribooks/database';
 import { generateToken, AuthTokenPayload } from '@bribooks/shared';
 import {
@@ -10,6 +11,47 @@ import {
 } from '@bribooks/shared';
 
 const googleClient = new OAuth2Client(process.env.GOOGLE_CLIENT_ID);
+
+const APPLE_ISSUER = 'https://appleid.apple.com';
+
+const appleJwksClient = jwksClient({
+    jwksUri: 'https://appleid.apple.com/auth/keys',
+    cache: true,
+    rateLimit: true,
+});
+
+const getAppleSigningKey: jwt.GetPublicKeyOrSecret = (header, callback) => {
+    appleJwksClient.getSigningKey(header.kid, (err, key) => {
+        if (err || !key) {
+            callback(err || new Error('Apple signing key not found'));
+            return;
+        }
+        callback(null, key.getPublicKey());
+    });
+};
+
+// Verify an Apple ID token against Apple's public keys (RS256) and validate
+// the issuer/audience claims before trusting any of its contents.
+function verifyAppleToken(idToken: string): Promise<jwt.JwtPayload> {
+    return new Promise((resolve, reject) => {
+        jwt.verify(
+            idToken,
+            getAppleSigningKey,
+            {
+                issuer: APPLE_ISSUER,
+                audience: process.env.APPLE_CLIENT_ID,
+                algorithms: ['RS256'],
+            },
+            (err, decoded) => {
+                if (err || !decoded || typeof decoded === 'string') {
+                    reject(new AuthenticationError('Invalid Apple token'));
+                    return;
+                }
+                resolve(decoded);
+            }
+        );
+    });
+}
 
 export class AuthService {
     // Register new user
@@ -171,16 +213,11 @@ export class AuthService {
 
     // Apple Sign In
     async appleAuth(idToken: string, userData?: { firstName?: string; lastName?: string }) {
-        // Decode the Apple ID token (JWT) without full verification for the sub claim
-        // Full verification requires fetching Apple's public keys
-        let decoded: any;
-        try {
-            decoded = jwt.decode(idToken);
-        } catch {
-            throw new AuthenticationError('Invalid Apple token');
-        }
+        // Verify the Apple ID token's signature against Apple's public keys
+        // before trusting any of its claims.
+        const decoded = await verifyAppleToken(idToken);
 
-        if (!decoded || !decoded.sub || !decoded.email) {
+        if (!decoded.sub || typeof decoded.email !== 'string') {
             throw new AuthenticationError('Invalid Apple token payload');
         }
 

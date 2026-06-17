@@ -1,6 +1,5 @@
 import React, { useState, useEffect, useCallback } from "react";
 import { useParams, useNavigate, Link } from "react-router-dom";
-import axios from "axios";
 import { motion } from "framer-motion";
 import {
   ArrowLeft,
@@ -66,6 +65,7 @@ export const BookEditorPage: React.FC = () => {
   const [book, setBook] = useState<Book | null>(null);
   const [chapters, setChapters] = useState<Chapter[]>([]);
   const [currentChapter, setCurrentChapter] = useState<Chapter | null>(null);
+  const [isChapterDirty, setIsChapterDirty] = useState(false);
   const [isEditingBook, setIsEditingBook] = useState(false);
   const [saving, setSaving] = useState(false);
   const [bookForm, setBookForm] = useState({
@@ -99,6 +99,7 @@ export const BookEditorPage: React.FC = () => {
   // Append voice transcript to current chapter content
   useEffect(() => {
     if (transcript && currentChapter) {
+      setIsChapterDirty(true);
       setCurrentChapter((prev) =>
         prev ? { ...prev, content: prev.content + transcript } : prev,
       );
@@ -124,8 +125,6 @@ export const BookEditorPage: React.FC = () => {
 
     try {
       const response = await booksService.getBookById(bookId!);
-      console.log('Book response:', response);
-      console.log('Book data:', response.data);
 
       setBook(response.data);
       setBookForm({
@@ -134,7 +133,6 @@ export const BookEditorPage: React.FC = () => {
         ageGroup: response.data.ageGroup,
         tags: response.data.tags || [],
       });
-      console.log('Book loaded successfully:', response.data);
     } catch (error) {
       console.error("Error loading book:", error);
       alert('Failed to load book. Please refresh the page.');
@@ -209,11 +207,27 @@ export const BookEditorPage: React.FC = () => {
         title: currentChapter.title,
         content: currentChapter.content,
       });
+      setIsChapterDirty(false);
     } catch (error) {
       console.error("Error saving chapter:", error);
     } finally {
       setSaving(false);
     }
+  };
+
+  // Switch chapters, warning the user about unsaved edits to avoid silent data loss.
+  const selectChapter = (chapter: Chapter) => {
+    if (chapter.id === currentChapter?.id) return;
+    if (
+      isChapterDirty &&
+      !window.confirm(
+        "You have unsaved changes in this chapter that will be lost. Switch chapters anyway?",
+      )
+    ) {
+      return;
+    }
+    setIsChapterDirty(false);
+    setCurrentChapter(chapter);
   };
 
   const createChapter = async () => {
@@ -514,7 +528,7 @@ export const BookEditorPage: React.FC = () => {
                   ? "border-primary bg-primary/5"
                   : "border-slate-200 hover:border-slate-300"
                   }`}
-                onClick={() => setCurrentChapter(chapter)}
+                onClick={() => selectChapter(chapter)}
               >
                 <div className="flex items-center justify-between">
                   <div className="flex-1">
@@ -580,12 +594,13 @@ export const BookEditorPage: React.FC = () => {
                   <input
                     type="text"
                     value={currentChapter.title}
-                    onChange={(e) =>
+                    onChange={(e) => {
+                      setIsChapterDirty(true);
                       setCurrentChapter({
                         ...currentChapter,
                         title: e.target.value,
-                      })
-                    }
+                      });
+                    }}
                     className="text-2xl font-bold text-slate-900 border-b-2 border-transparent hover:border-slate-300 focus:border-primary outline-none w-full pb-2 bg-transparent"
                     placeholder="Chapter title..."
                   />
@@ -594,12 +609,13 @@ export const BookEditorPage: React.FC = () => {
                 <div className="mb-4 relative">
                   <textarea
                     value={currentChapter.content}
-                    onChange={(e) =>
+                    onChange={(e) => {
+                      setIsChapterDirty(true);
                       setCurrentChapter({
                         ...currentChapter,
                         content: e.target.value,
-                      })
-                    }
+                      });
+                    }}
                     className="w-full min-h-[420px] p-5 pr-16 border border-slate-200 rounded-2xl focus:ring-2 focus:ring-primary focus:border-primary outline-none text-lg leading-relaxed resize-none bg-white/90 shadow-inner"
                     placeholder="Start writing or click the microphone to speak..."
                   />
@@ -685,6 +701,7 @@ export const BookEditorPage: React.FC = () => {
           chapterContent={currentChapter.content}
           ageGroup={book?.ageGroup || "MIDDLE_GRADE"}
           onApplySuggestion={(content) => {
+            setIsChapterDirty(true);
             setCurrentChapter({ ...currentChapter, content });
           }}
           onAddIllustration={(illustration) => {

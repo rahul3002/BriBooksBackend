@@ -9,6 +9,49 @@ import { useAuth } from '../context/AuthContext';
 import { authService } from '../services/api/auth.service';
 import toast from 'react-hot-toast';
 
+interface UserData {
+    id: string;
+    email: string;
+    firstName: string;
+    lastName: string;
+    role: string;
+}
+
+interface GoogleCredentialResponse {
+    credential?: string;
+}
+
+interface AppleResponse {
+    authorization?: {
+        id_token: string;
+    };
+    user?: {
+        name?: {
+            firstName: string;
+            lastName: string;
+        };
+    };
+}
+
+interface ApiError {
+    response?: {
+        data?: {
+            error?: {
+                message?: string;
+            };
+            message?: string;
+        };
+        status?: number;
+    };
+    message?: string;
+}
+
+interface AppleIDAuth {
+    auth: {
+        signIn: () => Promise<AppleResponse>;
+    };
+}
+
 export const SignupPage: React.FC = () => {
     const [name, setName] = useState('');
     const [email, setEmail] = useState('');
@@ -18,22 +61,23 @@ export const SignupPage: React.FC = () => {
     const { login } = useAuth();
     const navigate = useNavigate();
 
-    const handleOAuthSuccess = (token: string, userData: any) => {
+    const handleOAuthSuccess = (token: string, userData: UserData) => {
         toast.success('Account ready!');
         login(token, userData);
         navigate('/');
     };
 
-    const handleGoogleSuccess = async (credentialResponse: any) => {
+    const handleGoogleSuccess = async (credentialResponse: GoogleCredentialResponse) => {
         try {
             const res = await axios.post('/api/auth/google', { idToken: credentialResponse.credential });
             handleOAuthSuccess(res.data.data.token, res.data.data.user);
-        } catch (err: any) {
-            toast.error(err?.response?.data?.error?.message || 'Google sign-in failed');
+        } catch (err: unknown) {
+            const error = err as ApiError;
+            toast.error(error?.response?.data?.error?.message || 'Google sign-in failed');
         }
     };
 
-    const handleAppleSuccess = async (response: any) => {
+    const handleAppleSuccess = async (response: AppleResponse) => {
         try {
             const res = await axios.post('/api/auth/apple', {
                 idToken: response.authorization?.id_token,
@@ -43,8 +87,9 @@ export const SignupPage: React.FC = () => {
                 } : undefined,
             });
             handleOAuthSuccess(res.data.data.token, res.data.data.user);
-        } catch (err: any) {
-            toast.error(err?.response?.data?.error?.message || 'Apple sign-in failed');
+        } catch (err: unknown) {
+            const error = err as ApiError;
+            toast.error(error?.response?.data?.error?.message || 'Apple sign-in failed');
         }
     };
 
@@ -62,13 +107,14 @@ export const SignupPage: React.FC = () => {
             const { token, user: userData } = response.data;
             login(token, userData);
             navigate('/');
-        } catch (err: any) {
+        } catch (err: unknown) {
             console.error('Signup Error:', err);
-            if (err.response) {
-                console.error('Error Response:', err.response.data);
-                console.error('Error Status:', err.response.status);
+            const error = err as ApiError;
+            if (error.response) {
+                console.error('Error Response:', error.response.data);
+                console.error('Error Status:', error.response.status);
             }
-            setError(err.response?.data?.error?.message || err.message || 'Failed to create account');
+            setError(error.response?.data?.error?.message || error.message || 'Failed to create account');
         } finally {
             setIsLoading(false);
         }
@@ -107,7 +153,7 @@ export const SignupPage: React.FC = () => {
                     <button
                         type="button"
                         onClick={() => {
-                            const AppleID = (window as any).AppleID;
+                            const AppleID = (window as unknown as { AppleID?: AppleIDAuth }).AppleID;
                             if (!AppleID) { toast.error('Apple Sign-In not loaded'); return; }
                             AppleID.auth.signIn().then(handleAppleSuccess).catch(() => toast.error('Apple sign-in failed'));
                         }}

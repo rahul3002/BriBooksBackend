@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import { Link } from "react-router-dom";
 import { motion } from "framer-motion";
 import {
@@ -8,33 +8,15 @@ import {
   Clock,
   TrendingUp,
   ChevronRight,
-  Book,
+  Book as BookIcon,
 } from "lucide-react";
 import { Button } from "../components/ui/Button";
 import {
   booksService,
   type BookFilters,
   type PaginatedBooksResponse,
+  type Book,
 } from "../services/api/books.service";
-
-interface Book {
-  id: string;
-  title: string;
-  description: string;
-  authorId: string;
-  author?: {
-    firstName: string;
-    lastName: string;
-    username: string;
-  };
-  coverImageUrl?: string;
-  ageGroup: string;
-  tags: string[];
-  createdAt: string;
-  publishedAt: string;
-  rating?: number;
-  reviewCount?: number;
-}
 
 export const BooksPage: React.FC = () => {
   const [books, setBooks] = useState<Book[]>([]);
@@ -95,13 +77,9 @@ export const BooksPage: React.FC = () => {
     { label: "STEM & Discovery", tag: "science" },
   ];
 
-  useEffect(() => {
-    loadBooks();
-    loadPopularBooks();
-    loadRecentBooks();
-  }, [filters, searchQuery]);
 
-  const loadBooks = async () => {
+
+  const loadBooks = useCallback(async () => {
     try {
       setLoading(true);
       const currentFilters = { ...filters };
@@ -118,25 +96,31 @@ export const BooksPage: React.FC = () => {
     } finally {
       setLoading(false);
     }
-  };
+  }, [filters, searchQuery]);
 
-  const loadPopularBooks = async () => {
+  const loadPopularBooks = useCallback(async () => {
     try {
       const response = await booksService.getPopularBooks(6);
       setPopularBooks(response.data || []);
     } catch (error) {
       console.error("Error loading popular books:", error);
     }
-  };
+  }, []);
 
-  const loadRecentBooks = async () => {
+  const loadRecentBooks = useCallback(async () => {
     try {
       const response = await booksService.getRecentBooks(6);
       setRecentBooks(response.data || []);
     } catch (error) {
       console.error("Error loading recent books:", error);
     }
-  };
+  }, []);
+
+  useEffect(() => {
+    loadBooks();
+    loadPopularBooks();
+    loadRecentBooks();
+  }, [filters, searchQuery, loadBooks, loadPopularBooks, loadRecentBooks]);
 
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
@@ -355,7 +339,7 @@ export const BooksPage: React.FC = () => {
           </div>
         ) : displayBooks.length === 0 ? (
           <div className="text-center py-16">
-            <Book className="h-16 w-16 text-slate-300 mx-auto mb-4" />
+            <BookIcon className="h-16 w-16 text-slate-300 mx-auto mb-4" />
             <h3 className="text-xl font-semibold text-slate-900 mb-2">
               No books found
             </h3>
@@ -426,7 +410,7 @@ export const BooksPage: React.FC = () => {
                         </div>
                         {book.tags && book.tags.length > 0 && (
                           <div className="flex flex-wrap gap-1 mt-3">
-                            {book.tags.slice(0, 2).map((tag) => (
+                            {book.tags.slice(0, 2).map((tag: string) => (
                               <span
                                 key={tag}
                                 className="px-2 py-1 bg-slate-50 text-slate-500 text-xs rounded-lg"

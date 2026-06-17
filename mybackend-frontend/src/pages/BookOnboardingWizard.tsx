@@ -8,6 +8,19 @@ import { BookDetailsForm } from '../components/wizard/BookDetailsForm';
 import { booksService } from '../services/api/books.service';
 import { useAuth } from '../context/AuthContext';
 
+interface ApiError {
+    response?: {
+        data?: {
+            error?: {
+                message?: string;
+            };
+            message?: string;
+        };
+        status?: number;
+    };
+    message?: string;
+}
+
 interface WizardState {
     step: 1 | 2 | 3;
     selectedGenre: string | null;
@@ -149,11 +162,12 @@ export const BookOnboardingWizard: React.FC = () => {
 
             // Navigate to editor
             navigate(`/editor/${bookId}`);
-        } catch (error: any) {
+        } catch (error: unknown) {
             console.error('Error creating book:', error);
+            const err = error as ApiError;
 
-            // Handle authentication errors  
-            if (error.response?.status === 401 || error.response?.status === 403) {
+            // Handle authentication errors
+            if (err.response?.status === 401 || err.response?.status === 403) {
                 console.error('API returned auth error - token may be invalid');
                 // Token might be expired, save state and redirect
                 sessionStorage.setItem('wizardState', JSON.stringify(wizardState));
@@ -164,7 +178,7 @@ export const BookOnboardingWizard: React.FC = () => {
                 navigate('/login?returnTo=/start-writing');
             } else {
                 // Re-throw for form error handling
-                throw new Error(error.response?.data?.message || 'Failed to create book. Please try again.');
+                throw new Error(err.response?.data?.message || 'Failed to create book. Please try again.');
             }
         }
     };

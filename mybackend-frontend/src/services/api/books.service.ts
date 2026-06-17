@@ -13,13 +13,35 @@ export interface BookFilters {
 
 export interface PaginatedBooksResponse {
   success: boolean;
-  data: any[];
+  data: Book[];
   meta: {
     page: number;
     limit: number;
     total: number;
     totalPages: number;
   };
+}
+
+export interface Book {
+  id: string;
+  title: string;
+  description: string;
+  ageGroup: string;
+  authorId: string;
+  author?: {
+    id: string;
+    firstName: string;
+    lastName: string;
+  };
+  status: string;
+  tags?: string[];
+  theme?: string;
+  coverImageUrl?: string;
+  createdAt: string;
+  updatedAt: string;
+  publishedAt?: string;
+  rating?: number;
+  reviewCount?: number;
 }
 
 export const booksService = {
@@ -101,7 +123,7 @@ export const booksService = {
     return response.data;
   },
 
-  async updateBook(id: string, data: any) {
+  async updateBook(id: string, data: Partial<Book>) {
     const response = await axios.put(`${BOOK_API_URL}/${id}`, data);
     return response.data;
   },

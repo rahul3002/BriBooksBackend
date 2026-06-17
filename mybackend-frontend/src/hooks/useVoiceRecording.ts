@@ -11,25 +11,65 @@ interface UseVoiceRecordingReturn {
     resetTranscript: () => void;
 }
 
+interface SpeechRecognitionEvent {
+    resultIndex: number;
+    results: {
+        [index: number]: {
+            [index: number]: {
+                transcript: string;
+                isFinal: boolean;
+            };
+            isFinal: boolean;
+            length: number;
+        };
+        length: number;
+    };
+}
+
+interface SpeechRecognitionErrorEvent {
+    error: string;
+}
+
+interface SpeechRecognition extends EventTarget {
+    continuous: boolean;
+    interimResults: boolean;
+    lang: string;
+    maxAlternatives: number;
+    onstart: () => void;
+    onresult: (event: SpeechRecognitionEvent) => void;
+    onerror: (event: SpeechRecognitionErrorEvent) => void;
+    onend: () => void;
+    start: () => void;
+    stop: () => void;
+}
+
+declare global {
+    interface Window {
+        SpeechRecognition: {
+            new (): SpeechRecognition;
+        };
+        webkitSpeechRecognition: {
+            new (): SpeechRecognition;
+        };
+    }
+}
+
 export const useVoiceRecording = (): UseVoiceRecordingReturn => {
     const [isListening, setIsListening] = useState(false);
     const [transcript, setTranscript] = useState('');
     const [error, setError] = useState<string | null>(null);
-    const [isSupported, setIsSupported] = useState(false);
-    const recognitionRef = useRef<any>(null);
+    const [isSupported, setIsSupported] = useState(true);
+    const recognitionRef = useRef<SpeechRecognition | null>(null);
 
     useEffect(() => {
         // Check if browser supports Speech Recognition
-        const SpeechRecognition =
-            (window as any).SpeechRecognition ||
-            (window as any).webkitSpeechRecognition;
+        const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
 
         if (!SpeechRecognition) {
-            setIsSupported(false);
-            setError('Voice recording not supported in this browser. Please use Chrome or Safari.');
             return;
         }
 
+        // eslint-disable-next-line react-hooks/set-state-in-effect
         setIsSupported(true);
 
         const recognition = new SpeechRecognition();
@@ -44,16 +84,13 @@ export const useVoiceRecording = (): UseVoiceRecordingReturn => {
             setError(null);
         };
 
-        recognition.onresult = (event: any) => {
-            let interimTranscript = '';
+        recognition.onresult = (event: SpeechRecognitionEvent) => {
             let finalTranscript = '';
 
             for (let i = event.resultIndex; i < event.results.length; i++) {
                 const transcriptPiece = event.results[i][0].transcript;
                 if (event.results[i].isFinal) {
                     finalTranscript += transcriptPiece + ' ';
-                } else {
-                    interimTranscript += transcriptPiece;
                 }
             }
 
@@ -63,7 +100,7 @@ export const useVoiceRecording = (): UseVoiceRecordingReturn => {
             }
         };
 
-        recognition.onerror = (event: any) => {
+        recognition.onerror = (event: SpeechRecognitionErrorEvent) => {
             console.error('Speech recognition error:', event.error);
 
             let errorMessage = 'Voice recognition error occurred.';
@@ -100,11 +137,21 @@ export const useVoiceRecording = (): UseVoiceRecordingReturn => {
             if (recognitionRef.current) {
                 try {
                     recognitionRef.current.stop();
-                } catch (e) {
+                } catch {
                     // Ignore errors on cleanup
                 }
             }
         };
+    }, []);
+
+    // Set error if not supported after effect runs
+    useEffect(() => {
+        const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+        if (!SpeechRecognition) {
+            // eslint-disable-next-line react-hooks/set-state-in-effect
+            setError('Voice recording not supported in this browser. Please use Chrome or Safari.');
+            setIsSupported(false);
+        }
     }, []);
 
     const startListening = useCallback(() => {

@@ -29,6 +29,25 @@ interface AISuggestion {
   suggestion?: string;
 }
 
+interface GrammarCorrection {
+  original: string;
+  suggestion: string;
+  reason: string;
+  severity?: "low" | "medium" | "high";
+}
+
+interface ApiError {
+  response?: {
+    data?: {
+      error?: {
+        message?: string;
+      };
+      message?: string;
+    };
+  };
+  message?: string;
+}
+
 export const AIAssistant: React.FC<AIAssistantProps> = ({
   chapterContent,
   ageGroup,
@@ -36,7 +55,7 @@ export const AIAssistant: React.FC<AIAssistantProps> = ({
   onAddIllustration,
 }) => {
   const extractError = (error: unknown): string => {
-    const e = error as any;
+    const e = error as ApiError;
     const msg: string =
       e?.response?.data?.error?.message ||
       e?.response?.data?.message ||
@@ -86,7 +105,7 @@ export const AIAssistant: React.FC<AIAssistantProps> = ({
       const data = response?.data ?? response;
       if (data?.corrections?.length > 0) {
         setSuggestions(
-          data.corrections.map((correction: any) => ({
+          data.corrections.map((correction: GrammarCorrection) => ({
             type: "grammar",
             message: correction.reason,
             original: correction.original,

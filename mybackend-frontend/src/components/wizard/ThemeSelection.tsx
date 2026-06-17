@@ -2,7 +2,7 @@ import React from 'react';
 import { motion } from 'framer-motion';
 import { Check } from 'lucide-react';
 import { Button } from '../ui/Button';
-import { bookThemes, getThemeById } from '../ThemeSelector';
+import { bookThemes, getThemeById, type BookTheme } from '../ThemeSelector';
 
 interface ThemeSelectionProps {
     selectedGenre: string;
@@ -32,7 +32,7 @@ export const ThemeSelection: React.FC<ThemeSelectionProps> = ({
     onNext,
 }) => {
     const category = genreToCategory[selectedGenre] || 'Fantasy';
-    const filteredThemes = bookThemes.filter((theme) => theme.category === category);
+    const filteredThemes = bookThemes.filter((theme: BookTheme) => theme.category === category);
 
     // If no themes match, show all themes
     const themesToShow = filteredThemes.length > 0 ? filteredThemes : bookThemes;
@@ -61,7 +61,7 @@ export const ThemeSelection: React.FC<ThemeSelectionProps> = ({
 
             {/* Themes Grid */}
             <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 md:gap-6 mb-8">
-                {themesToShow.map((theme, index) => {
+                {themesToShow.map((theme: BookTheme, index: number) => {
                     const isSelected = selectedTheme === theme.id;
 
                     return (

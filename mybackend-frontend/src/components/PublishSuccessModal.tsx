@@ -24,6 +24,7 @@ export const PublishSuccessModal: React.FC<PublishSuccessModalProps> = ({
 
     useEffect(() => {
         if (isOpen) {
+            // eslint-disable-next-line react-hooks/set-state-in-effect
             setShowConfetti(true);
             const timer = setTimeout(() => setShowConfetti(false), 5000);
             return () => clearTimeout(timer);

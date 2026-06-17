@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import { useParams, useNavigate, Link } from "react-router-dom";
 import axios from "axios";
 import { motion } from "framer-motion";
@@ -22,6 +22,18 @@ import { PublishSuccessModal } from "../components/PublishSuccessModal";
 import { booksService } from "../services/api/books.service";
 import { useVoiceRecording } from "../hooks/useVoiceRecording";
 import { useAuth } from "../context/AuthContext";
+
+interface ApiError {
+  response?: {
+    data?: {
+      error?: {
+        message?: string;
+      };
+      message?: string;
+    };
+  };
+  message?: string;
+}
 
 interface Book {
   id: string;
@@ -50,7 +62,7 @@ interface Chapter {
 export const BookEditorPage: React.FC = () => {
   const { bookId } = useParams<{ bookId: string }>();
   const navigate = useNavigate();
-  const { } = useAuth();
+  useAuth();
   const [book, setBook] = useState<Book | null>(null);
   const [chapters, setChapters] = useState<Chapter[]>([]);
   const [currentChapter, setCurrentChapter] = useState<Chapter | null>(null);
@@ -84,16 +96,6 @@ export const BookEditorPage: React.FC = () => {
     { value: "YOUNG_ADULT", label: "Young Adult (13+ years)" },
   ];
 
-  useEffect(() => {
-    if (bookId) {
-      loadBook();
-      loadChapters();
-    } else {
-      // Create new book
-      setIsEditingBook(true);
-    }
-  }, [bookId]);
-
   // Append voice transcript to current chapter content
   useEffect(() => {
     if (transcript && currentChapter) {
@@ -114,7 +116,7 @@ export const BookEditorPage: React.FC = () => {
     }
   }, []);
 
-  const loadBook = async () => {
+  const loadBook = useCallback(async () => {
     console.log('=== Loading book ===');
     console.log('Book ID:', bookId);
     console.log('localStorage token:', localStorage.getItem('token'));
@@ -137,9 +139,9 @@ export const BookEditorPage: React.FC = () => {
       console.error("Error loading book:", error);
       alert('Failed to load book. Please refresh the page.');
     }
-  };
+  }, [bookId]);
 
-  const loadChapters = async () => {
+  const loadChapters = useCallback(async () => {
     try {
       const response = await booksService.getBookChapters(bookId!);
       const sortedChapters = (response.data || []).sort(
@@ -152,7 +154,17 @@ export const BookEditorPage: React.FC = () => {
     } catch (error) {
       console.error("Error loading chapters:", error);
     }
-  };
+  }, [bookId]);
+
+  useEffect(() => {
+    if (bookId) {
+      loadBook();
+      loadChapters();
+    } else {
+      // Create new book
+      setIsEditingBook(true);
+    }
+  }, [bookId, loadBook, loadChapters]);
 
   const saveBook = async () => {
     // Validation
@@ -316,12 +328,13 @@ export const BookEditorPage: React.FC = () => {
       await booksService.publishBook(book.id);
       setBook({ ...book, status: "PUBLISHED" });
       setShowPublishSuccess(true);
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error("Error publishing book:", error);
+      const err = error as ApiError;
       const msg =
-        error?.response?.data?.error?.message ||
-        error?.response?.data?.message ||
-        error?.message ||
+        err?.response?.data?.error?.message ||
+        err?.response?.data?.message ||
+        err?.message ||
         "Failed to publish book. Please try again.";
       alert(msg);
     }

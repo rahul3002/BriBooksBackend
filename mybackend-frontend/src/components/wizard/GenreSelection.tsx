@@ -1,72 +1,6 @@
 import React from 'react';
 import { motion } from 'framer-motion';
-
-interface Genre {
-    id: string;
-    name: string;
-    icon: string;
-    color: string;
-    description: string;
-}
-
-const genres: Genre[] = [
-    {
-        id: 'fantasy',
-        name: 'Fantasy & Magic',
-        icon: '🧙‍♂️',
-        color: '#8b5cf6',
-        description: 'Wizards, dragons, and magical adventures'
-    },
-    {
-        id: 'science',
-        name: 'Science & Space',
-        icon: '🚀',
-        color: '#3b82f6',
-        description: 'Explore the stars and discover new worlds'
-    },
-    {
-        id: 'animals',
-        name: 'Animals & Nature',
-        icon: '🦁',
-        color: '#10b981',
-        description: 'Adventures with animals and wildlife'
-    },
-    {
-        id: 'technology',
-        name: 'Technology & Robots',
-        icon: '🤖',
-        color: '#06b6d4',
-        description: 'Robots, gadgets, and future tech'
-    },
-    {
-        id: 'art',
-        name: 'Art & Music',
-        icon: '🎨',
-        color: '#ec4899',
-        description: 'Creative expression and artistic journeys'
-    },
-    {
-        id: 'sports',
-        name: 'Sports & Games',
-        icon: '⚽',
-        color: '#ef4444',
-        description: 'Athletic adventures and competitions'
-    },
-    {
-        id: 'environment',
-        name: 'Climate & Environment',
-        icon: '🌍',
-        color: '#84cc16',
-        description: 'Protecting our planet and nature'
-    },
-    {
-        id: 'general',
-        name: 'General Stories',
-        icon: '📖',
-        color: '#64748b',
-        description: 'Everyday adventures and life stories'
-    },
-];
+import { genres } from './genreData';
 
 interface GenreSelectionProps {
     onSelect: (genreId: string) => void;
@@ -144,5 +78,3 @@ export const GenreSelection: React.FC<GenreSelectionProps> = ({ onSelect }) => {
         </motion.div>
     );
 };
-
-export { genres };

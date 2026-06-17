@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import { useParams, Link } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import {
@@ -62,11 +62,7 @@ export const BookReadPage: React.FC = () => {
   const [isBookmarked, setIsBookmarked] = useState(false);
   const [showShareModal, setShowShareModal] = useState(false);
 
-  useEffect(() => {
-    if (bookId) {
-      loadBook();
-    }
-  }, [bookId]);
+
 
   useEffect(() => {
     if (
@@ -78,7 +74,7 @@ export const BookReadPage: React.FC = () => {
     }
   }, [chapters, currentChapterIndex]);
 
-  const loadBook = async () => {
+  const loadBook = useCallback(async () => {
     try {
       const response = await booksService.getPublishedBookById(bookId!);
       const bookData = response.data;
@@ -92,7 +88,13 @@ export const BookReadPage: React.FC = () => {
     } finally {
       setLoading(false);
     }
-  };
+  }, [bookId]);
+
+  useEffect(() => {
+    if (bookId) {
+      loadBook();
+    }
+  }, [bookId, loadBook]);
 
   const goToChapter = (index: number) => {
     if (index >= 0 && index < chapters.length) {
